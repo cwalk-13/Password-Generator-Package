@@ -3,14 +3,17 @@ import string
 import random
 import re
 
+def password_from_config_file(filepath: str) -> str:
+    with open(filepath) as jsn:
+        rules = json.load(jsn)
+    
+    pg = PasswordGenerator(rules)
+    password = pg.new()
+    return password
 
 class PasswordGenerator:
 
     def __init__(self, config: str):
-
-        # with open(config) as jsn:
-        #     rules = json.load(jsn)
-        # self.rules = rules
 
         self.rules = json.loads(config)
 
@@ -65,7 +68,6 @@ class PasswordGenerator:
                 print("Error: Invalid length requirment")
                 self.length = req_chars_length   #automatically corrected to appropriate length
 
-        
         pass
 
 
