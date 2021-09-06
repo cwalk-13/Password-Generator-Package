@@ -1,0 +1,38 @@
+{
+    "length": 12,
+
+    "allowed_characters": {
+        "groups": {
+            "special": "!@#$%&*()[]{}"
+        },
+        "constants": {
+            "lowercase": "ascii_lowercase",
+            "uppercase": "ascii_uppercase",
+            "numbers": "digits"
+        }
+    },
+
+    "required_characters" : [
+        [4, "group", "special"],
+        [3, "constant", "uppercase"],
+        [3, "constant", "lowercase"],
+        [3, "constant", "numbers"]
+    ],
+
+    "violations" : {
+        "consecutive": 2,
+        "occurrence": 2,
+        "sequential": [
+            [2, "constant", "numbers"],
+            [2, "constant", "uppercase"],
+            [2, "constant", "lowercase"]
+        ],
+        "verboten": [
+            "password",
+            "topsecret",
+            "foobar",
+            "spam",
+            "%&"
+        ]
+    }
+}

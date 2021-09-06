@@ -1,3 +1,10 @@
+'''
+Charles Walker
+9/6/2021
+PasswordGenerator.py
+This file contains the class "PasswordGenerator" that interprets a json file of requirements for a 
+password and creates a password according to those requirements.
+'''
 import json
 import string
 import random
@@ -39,10 +46,11 @@ class PasswordGenerator:
             self.allowed_characters = all_allowed_characters
         except:
             pass
-        
+
+        #the violations are referred to multiple times
         self.violations = self.rules["violations"]
         
-        #Check the length of required characters
+        #Get the number of required characters
         try:
             required_chars_rules = self.rules["required_characters"]
             req_chars_length = 0
@@ -50,6 +58,7 @@ class PasswordGenerator:
                 req_chars_length += req[0]
         except:
             pass
+
         length_given = True
 
         # Use length if a length is specified
@@ -127,25 +136,25 @@ class PasswordGenerator:
                         total_found +=1
                 if total_found < req[0]:
                     password_allowed = False
-                    print(" REQUIRED CHARACTERS FAILED")
+                    # print(" REQUIRED CHARACTERS FAILED")
                     break
         
         #check violations
 
         if self.check_consecutive_rule(password) == False:
-            print(" CONSECUTIVE RULE FAILED")
+            # print(" CONSECUTIVE RULE FAILED") #these print statements were used to see where passwords were failing
             password_allowed = False
 
         if self.check_occurrence_rule(password) == False:
-            print(" OCCURRANCE RULE FAILED")
+            # print(" OCCURRANCE RULE FAILED")
             password_allowed = False
 
         if self.check_sequential_rule(password) == False:
-            print(" SEQUENTIAL RULE FAILED WITH:")
+            # print(" SEQUENTIAL RULE FAILED WITH:")
             password_allowed = False
 
         if self.check_verboten_rule(password) == False:
-            print(" VERBOTEN RULE FAILED")
+            # print(" VERBOTEN RULE FAILED")
             password_allowed = False
 
         return password_allowed
@@ -222,7 +231,7 @@ class PasswordGenerator:
         return passed
     '''
     get_req_chars():
-        This method returns a set of randomly chosen, required characters
+        This method returns a set of randomly chosen required characters asa substring that will be added to the password string
     '''
     def get_req_chars(self) -> str:
         required_chars_rules = self.rules["required_characters"]
