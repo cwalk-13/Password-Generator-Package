@@ -1,7 +1,6 @@
 import json
 import string
 import random
-import re
 
 def password_from_config_file(filepath: str) -> str:
     with open(filepath, 'rt') as f:
@@ -16,7 +15,7 @@ class PasswordGenerator:
 
         self.rules = json.loads(config)
 
-        #allowed characters
+        # make a string of all allowed characters
         try:
             all_allowed_characters = ''
             for key in self.rules["allowed_characters"]: #loop through each kv pair in allowed characters
@@ -41,7 +40,9 @@ class PasswordGenerator:
         except:
             pass
         
-        #Check length of required characters
+        self.violations = self.rules["violations"]
+        
+        #Check the length of required characters
         try:
             required_chars_rules = self.rules["required_characters"]
             req_chars_length = 0
@@ -51,15 +52,14 @@ class PasswordGenerator:
             pass
         length_given = True
 
-        #length
+        # Use length if a length is specified
         try:
             self.length = self.rules["length"]
-
         except:
             length_given == False
             self.length = 10
 
-
+        #In case the number of required chars is greater than the given length, increase the length
         if req_chars_length > self.length:
             if not length_given:
                 self.length = req_chars_length
@@ -69,15 +69,19 @@ class PasswordGenerator:
 
         pass
 
-
+    '''
+    new():
+        Creates a new password by first gathering all required characters, then add random characters.
+        Fix the password if there any violations of the given rules.
+    '''
     def new(self) -> str:
 
         #get required chars
         required_chars = self.get_req_chars()
 
-        #Check that req chars does not violate occurrance rule
+        #Check that req chars do not violate occurrance rule
         violations = self.rules["violations"]
-        while self.check_occurrence_rule(required_chars, violations) == False:
+        while self.check_occurrence_rule(required_chars) == False:
             required_chars = self.get_req_chars()
 
         #add random chars to req chars to create password
@@ -85,18 +89,21 @@ class PasswordGenerator:
         password += required_chars
 
         #fix any occurrance rule violation
-        while self.check_occurrence_rule(password, violations) == False:
+        while self.check_occurrence_rule(password) == False:
             password = ''.join(random.choice(self.allowed_characters) for _ in range(self.length - len(required_chars)))
             password += required_chars
         
-        #check that refined password does not violate other rules, if so just shuffle
-        while self.check_consecutive_rule(password, violations) == False or self.check_sequential_rule(password, violations) == False or self.check_verboten_rule(password, violations) == False:
+        #check that the refined password does not violate other rules, if so just shuffle the string
+        while self.check_consecutive_rule(password) == False or self.check_sequential_rule(password) == False or self.check_verboten_rule(password) == False:
             password = ''.join(random.sample(password,len(password)))
         
         print(password)
         return password
 
-
+    '''
+    allowed(password):
+        This method returns true if the password requirements are met and there are no violations
+    '''
     def allowed(self, password: str) -> bool:
         password_allowed = True
 
@@ -110,7 +117,7 @@ class PasswordGenerator:
         if len(password) < self.length:
             password_allowed = False
         
-        #check required characters
+        #check if required characters are present
         required_characters = self.rules["required_characters"]
         for req in required_characters:
             if password_allowed:
@@ -124,54 +131,66 @@ class PasswordGenerator:
                     break
         
         #check violations
-        violations = self.rules["violations"]
 
-        if self.check_consecutive_rule(password, violations) == False:
+        if self.check_consecutive_rule(password) == False:
+            print(" CONSECUTIVE RULE FAILED")
             password_allowed = False
 
-        if self.check_occurrence_rule(password, violations) == False:
+        if self.check_occurrence_rule(password) == False:
+            print(" OCCURRANCE RULE FAILED")
             password_allowed = False
 
-        if self.check_sequential_rule(password, violations) == False:
+        if self.check_sequential_rule(password) == False:
+            print(" SEQUENTIAL RULE FAILED WITH:")
             password_allowed = False
 
-        if self.check_verboten_rule(password, violations) == False:
+        if self.check_verboten_rule(password) == False:
+            print(" VERBOTEN RULE FAILED")
             password_allowed = False
 
         return password_allowed
 
-    def check_consecutive_rule(self, password, violations) -> bool:
+    '''
+    check_consecutive_rule(password):
+        This method returns false if there is a violation of the "consecutive" rule.
+    '''
+    def check_consecutive_rule(self, password) -> bool:
         passed = True
         try:
-            consecutive_limit = violations["consecutive"]
+            consecutive_limit = self.violations["consecutive"]
             consecutives_found = 1
             for i in range(len(password) -1):
                 if password[i] == password[i+1]:
                     consecutives_found +=1
             if consecutives_found >= consecutive_limit:
                 passed = False
-                print(" CONSECUTIVE RULE FAILED")
         except:
             pass
         return passed
 
-    def check_occurrence_rule(self, password, violations) -> bool:
+    '''
+    check_occurrence_rule(password):
+        This method returns false if there is a violation of the "occurrence" rule
+    '''
+    def check_occurrence_rule(self, password) -> bool:
         passed = True
         try:
-            occurrence_limit = violations["occurrence"]
+            occurrence_limit = self.violations["occurrence"]
             for ch in password:
                 if password.count(ch) >= occurrence_limit:
                     passed= False
-                    print(" OCCURRANCE RULE FAILED")
                     break
         except:
             pass
         return passed
-
-    def check_sequential_rule(self, password, violations) -> bool:
+    '''
+    check_sequential_rule(password):
+        This method returns false if there is a violation of the "sequential" rule
+    '''
+    def check_sequential_rule(self, password) -> bool:
         passed = True
         try:
-            sequential_rule = violations["sequential"]
+            sequential_rule = self.violations["sequential"]
             for rule in sequential_rule:
                 chars = self.rules["allowed_characters"][rule[1]+"s"][rule[2]]
                 seq_limit = rule[0]
@@ -181,25 +200,30 @@ class PasswordGenerator:
                     sub_str_rev = sub_str[::-1]
                     if sub_str in password or sub_str_rev in password:
                         passed = False
-                        print(" SEQUENTIAL RULE FAILED WITH:" + sub_str)
                         break 
         except:
             pass
         return passed
 
-    def check_verboten_rule(self, password, violations) -> bool:
+    '''
+    check_verboten_rule(password):
+        This method returns false if there is a violation of the "verboten" rule
+    '''
+    def check_verboten_rule(self, password) -> bool:
         passed = True
         try:
-            verboten = violations["verboten"]
+            verboten = self.violations["verboten"]
             for sub_str in verboten:
                 if sub_str in password:
                     passed = False
-                    print(" VERBOTEN RULE FAILED")
                     break
         except:
             pass
         return passed
-
+    '''
+    get_req_chars():
+        This method returns a set of randomly chosen, required characters
+    '''
     def get_req_chars(self) -> str:
         required_chars_rules = self.rules["required_characters"]
         required_chars = ''
