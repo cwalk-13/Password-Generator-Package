@@ -4,10 +4,9 @@ import random
 import re
 
 def password_from_config_file(filepath: str) -> str:
-    with open(filepath) as jsn:
-        rules = json.load(jsn)
-    
-    pg = PasswordGenerator(rules)
+    with open(filepath, 'rt') as f:
+        config = f.read()
+    pg = PasswordGenerator(config)
     password = pg.new()
     return password
 
